@@ -23,6 +23,13 @@ CORS(app)  # Enable CORS for frontend access
 # Get admin secret from environment
 ADMIN_SECRET = os.getenv('ADMIN_SECRET', 'change-me-in-production')
 
+# Initialize database tables on startup
+try:
+    create_tables()
+    print("✅ Database tables initialized")
+except Exception as e:
+    print(f"⚠️  Warning: Could not initialize database tables: {e}")
+
 
 # Serve frontend
 @app.route('/')
