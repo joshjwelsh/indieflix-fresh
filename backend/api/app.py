@@ -375,6 +375,58 @@ def get_stats():
         }), 500
 
 
+@app.route('/admin/trigger-scrape', methods=['POST'])
+def trigger_scrape():
+    """
+    Manually trigger scraping from all theaters
+    Requires ADMIN_SECRET in X-Admin-Key header
+    """
+    # Check authentication
+    admin_key = request.headers.get('X-Admin-Key')
+    if not admin_key or admin_key != ADMIN_SECRET:
+        return jsonify({
+            'success': False,
+            'error': 'Unauthorized'
+        }), 401
+    
+    try:
+        # Import scrapers
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'deng' / 'ingestion'))
+        
+        results = {}
+        
+        # Run each scraper
+        try:
+            from metrograph_v2 import scrape_metrograph
+            metrograph_count = scrape_metrograph()
+            results['metrograph'] = {'success': True, 'count': metrograph_count}
+        except Exception as e:
+            results['metrograph'] = {'success': False, 'error': str(e)}
+        
+        try:
+            from syndicatedbk import scrape_syndicated
+            syndicated_count = scrape_syndicated()
+            results['syndicated'] = {'success': True, 'count': syndicated_count}
+        except Exception as e:
+            results['syndicated'] = {'success': False, 'error': str(e)}
+        
+        # Count total movies scraped
+        total_scraped = sum(r.get('count', 0) for r in results.values() if r.get('success'))
+        
+        return jsonify({
+            'success': True,
+            'total_scraped': total_scraped,
+            'results': results,
+            'message': f'Scraped {total_scraped} total movies from {len(results)} theaters'
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/admin/trigger-enrichment', methods=['POST'])
 def trigger_enrichment():
     """
@@ -405,6 +457,68 @@ def trigger_enrichment():
             'success': True,
             'enriched': enriched_count,
             'message': f'Successfully enriched {enriched_count} movies'
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/admin/trigger-backfill', methods=['POST'])
+def trigger_backfill():
+    """
+    Run complete backfill: scrape all theaters + enrich all movies
+    Requires ADMIN_SECRET in X-Admin-Key header
+    """
+    # Check authentication
+    admin_key = request.headers.get('X-Admin-Key')
+    if not admin_key or admin_key != ADMIN_SECRET:
+        return jsonify({
+            'success': False,
+            'error': 'Unauthorized'
+        }), 401
+    
+    try:
+        # Import modules
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'deng' / 'ingestion'))
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'deng' / 'enrichment'))
+        
+        results = {'scrape': {}, 'enrichment': {}}
+        
+        # 1. Run scrapers
+        try:
+            from metrograph_v2 import scrape_metrograph
+            metrograph_count = scrape_metrograph()
+            results['scrape']['metrograph'] = {'success': True, 'count': metrograph_count}
+        except Exception as e:
+            results['scrape']['metrograph'] = {'success': False, 'error': str(e)}
+        
+        try:
+            from syndicatedbk import scrape_syndicated
+            syndicated_count = scrape_syndicated()
+            results['scrape']['syndicated'] = {'success': True, 'count': syndicated_count}
+        except Exception as e:
+            results['scrape']['syndicated'] = {'success': False, 'error': str(e)}
+        
+        total_scraped = sum(r.get('count', 0) for r in results['scrape'].values() if r.get('success'))
+        
+        # 2. Run enrichment
+        try:
+            from tmdb_enricher import TMDBEnricher
+            enricher = TMDBEnricher()
+            enriched_count = enricher.enrich_all_unenriched(limit=100)
+            results['enrichment'] = {'success': True, 'count': enriched_count}
+        except Exception as e:
+            results['enrichment'] = {'success': False, 'error': str(e)}
+        
+        return jsonify({
+            'success': True,
+            'total_scraped': total_scraped,
+            'total_enriched': results['enrichment'].get('count', 0),
+            'results': results,
+            'message': f'Backfill complete: {total_scraped} movies scraped, {results["enrichment"].get("count", 0)} enriched'
         })
     
     except Exception as e:
