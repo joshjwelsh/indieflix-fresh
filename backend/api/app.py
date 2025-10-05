@@ -3,9 +3,10 @@ Indieflix Backend API
 Flask API to serve movie theater schedules from PostgreSQL
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import sys
+import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -13,17 +14,46 @@ from datetime import datetime, timedelta
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'deng' / 'utils'))
 from storage.postgres import db_select_df, db_select, create_tables
 
-app = Flask(__name__)
+# Configure Flask app
+app = Flask(__name__, 
+            static_folder='../../frontend',
+            static_url_path='')
 CORS(app)  # Enable CORS for frontend access
 
+# Get admin secret from environment
+ADMIN_SECRET = os.getenv('ADMIN_SECRET', 'change-me-in-production')
 
+
+# Serve frontend
+@app.route('/')
+def serve_frontend():
+    """Serve the frontend index.html"""
+    return send_from_directory(app.static_folder, 'index.html')
+
+
+@app.route('/<path:path>')
+def serve_static(path):
+    """Serve other static files"""
+    return send_from_directory(app.static_folder, path)
+
+
+# Health check endpoints (both /health and /api/health for compatibility)
+@app.route('/health', methods=['GET'])
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint for Render and monitoring"""
+    try:
+        # Test database connection
+        db_select("SELECT 1")
+        db_status = 'connected'
+    except Exception as e:
+        db_status = f'error: {str(e)}'
+    
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
-        'service': 'indieflix-api'
+        'service': 'indieflix-api',
+        'database': db_status
     })
 
 
@@ -329,6 +359,45 @@ def get_stats():
                 'current_movies': recent_movies,
                 'last_scrape': last_scrape
             }
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/admin/trigger-enrichment', methods=['POST'])
+def trigger_enrichment():
+    """
+    Manually trigger TMDB enrichment for unenriched movies
+    Requires ADMIN_SECRET in X-Admin-Key header
+    """
+    # Check authentication
+    admin_key = request.headers.get('X-Admin-Key')
+    if not admin_key or admin_key != ADMIN_SECRET:
+        return jsonify({
+            'success': False,
+            'error': 'Unauthorized'
+        }), 401
+    
+    try:
+        # Import enricher
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'deng' / 'enrichment'))
+        from tmdb_enricher import TMDBEnricher
+        
+        # Get limit from request
+        limit = request.json.get('limit', 50) if request.json else 50
+        
+        # Run enrichment
+        enricher = TMDBEnricher()
+        enriched_count = enricher.enrich_all_unenriched(limit=limit)
+        
+        return jsonify({
+            'success': True,
+            'enriched': enriched_count,
+            'message': f'Successfully enriched {enriched_count} movies'
         })
     
     except Exception as e:

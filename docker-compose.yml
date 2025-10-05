@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: indieflix-db
+    environment:
+      POSTGRES_DB: indieflix
+      POSTGRES_USER: indieflix
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U indieflix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - indieflix-network
+
+  # Backend API + Frontend
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: indieflix-web
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: indieflix
+      DB_USER: indieflix
+      DB_PASSWORD: mypassword
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      TMDB_BASE_IMAGE_URL: https://image.tmdb.org/t/p/
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount source code for hot-reload during development
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./deng:/app/deng
+    depends_on:
+      db:
+        condition: service_healthy
+    command: flask --app backend.api.app run --host=0.0.0.0 --port=5000 --debug
+    networks:
+      - indieflix-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  indieflix-network:
+    driver: bridge

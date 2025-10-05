@@ -1,0 +1,48 @@
+services:
+  # Web Service - Flask Backend + Frontend
+  - type: web
+    name: indieflix-web
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT --timeout 120 backend.api.app:app
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DB_HOST
+        fromDatabase:
+          name: indieflix-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: indieflix-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: indieflix-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: indieflix-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: indieflix-db
+          property: password
+      - key: TMDB_API_KEY
+        sync: false  # Set manually in Render dashboard
+      - key: TMDB_BASE_IMAGE_URL
+        value: https://image.tmdb.org/t/p/
+      - key: ADMIN_SECRET
+        generateValue: true  # Auto-generated secret for admin endpoints
+      - key: FLASK_ENV
+        value: production
+
+databases:
+  # PostgreSQL Database
+  - name: indieflix-db
+    databaseName: indieflix
+    plan: free
+    region: oregon
