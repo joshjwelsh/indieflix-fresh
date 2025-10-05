@@ -29,7 +29,6 @@ COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 COPY deng/ ./deng/
 COPY sql/ ./sql/
-COPY .env .env
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && \
