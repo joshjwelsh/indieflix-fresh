@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indieflix - NYC Arthouse Cinema Schedules</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎬 Indieflix</h1>
+            <p class="tagline">Your guide to NYC arthouse cinema</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Search Bar -->
+        <section class="search-section">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search movies..." 
+                class="search-input"
+            >
+        </section>
+
+        <!-- Date Filter -->
+        <section class="date-filter">
+            <button class="date-btn active" data-date="all">All Dates</button>
+            <button class="date-btn" data-date="today">📅 Today</button>
+            <button class="date-btn" data-date="tomorrow">📅 Tomorrow</button>
+            <input type="date" id="customDate" class="date-picker" title="Select a specific date">
+        </section>
+
+        <!-- Theater Filter - Multi-select -->
+        <section class="theater-filter">
+            <h3 class="filter-heading">Select Theaters:</h3>
+            <div class="theater-checkboxes">
+                <label class="theater-checkbox">
+                    <input type="checkbox" value="ifc_center" checked>
+                    <span>IFC Center</span>
+                </label>
+                <label class="theater-checkbox">
+                    <input type="checkbox" value="metrograph" checked>
+                    <span>Metrograph</span>
+                </label>
+                <label class="theater-checkbox">
+                    <input type="checkbox" value="syndicated_bk" checked>
+                    <span>Syndicated BK</span>
+                </label>
+            </div>
+            <button id="clearTheaters" class="clear-btn">Clear All</button>
+            <button id="selectAllTheaters" class="select-all-btn">Select All</button>
+        </section>
+
+        <!-- Stats Bar -->
+        <section class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">Movies:</span>
+                <span id="movieCount" class="stat-value">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Last Updated:</span>
+                <span id="lastUpdated" class="stat-value">-</span>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading">
+            <div class="spinner"></div>
+            <p>Loading movie schedules...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-message" style="display: none;">
+            <p>⚠️ Could not load movie data. Please try again later.</p>
+        </div>
+
+        <!-- Movies Container -->
+        <section id="moviesContainer" class="movies-grid">
+            <!-- Movies will be dynamically loaded here -->
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Indieflix | Data updated daily at 2 AM EST</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
