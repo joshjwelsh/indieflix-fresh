@@ -1,6 +1,7 @@
 // Indieflix Frontend JavaScript
 // API Configuration
-const API_BASE_URL = 'http://localhost:8080/proxy/5000/api';
+// Use relative path - works for both local and production since Flask serves both
+const API_BASE_URL = '/api';
 
 // State
 let allMovies = [];
