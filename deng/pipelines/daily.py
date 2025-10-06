@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'enrichment'))
 
 from metrograph_v2 import MetrographScraperV2, save_to_db as save_metrograph
 from syndicatedbk import SyndicatedBKScraper, save_to_db as save_syndicated
+from ifc_center_v2 import IFCCenterScraperV2, save_to_db as save_ifc
 from tmdb_enricher import TMDBEnricher
 
 
@@ -29,6 +30,7 @@ def run_pipeline():
     results = {
         'metrograph': {'success': False, 'count': 0},
         'syndicated': {'success': False, 'count': 0},
+        'ifc_center': {'success': False, 'count': 0},
         'enrichment': {'success': False, 'count': 0}
     }
     
@@ -58,8 +60,21 @@ def run_pipeline():
         print(f"❌ Syndicated BK failed: {e}\n")
         results['syndicated'] = {'success': False, 'error': str(e)}
     
-    # 3. Enrich with TMDB data
-    print("🎬 STEP 3: Enriching with TMDB data...")
+    # 3. Scrape IFC Center
+    print("📽️  STEP 3: Scraping IFC Center...")
+    print("-" * 60)
+    try:
+        scraper = IFCCenterScraperV2()
+        movies = scraper.scrape()
+        save_ifc(movies)
+        results['ifc_center'] = {'success': True, 'count': len(movies)}
+        print(f"✅ IFC Center: {len(movies)} movies scraped\n")
+    except Exception as e:
+        print(f"❌ IFC Center failed: {e}\n")
+        results['ifc_center'] = {'success': False, 'error': str(e)}
+    
+    # 4. Enrich with TMDB data
+    print("🎬 STEP 4: Enriching with TMDB data...")
     print("-" * 60)
     try:
         enricher = TMDBEnricher()
@@ -75,12 +90,15 @@ def run_pipeline():
     print("PIPELINE SUMMARY")
     print("="*60)
     
-    total_scraped = results['metrograph'].get('count', 0) + results['syndicated'].get('count', 0)
+    total_scraped = (results['metrograph'].get('count', 0) + 
+                     results['syndicated'].get('count', 0) + 
+                     results['ifc_center'].get('count', 0))
     total_enriched = results['enrichment'].get('count', 0)
     
     print(f"✅ Total movies scraped: {total_scraped}")
     print(f"   - Metrograph: {results['metrograph'].get('count', 0)}")
     print(f"   - Syndicated BK: {results['syndicated'].get('count', 0)}")
+    print(f"   - IFC Center: {results['ifc_center'].get('count', 0)}")
     print(f"🎬 Total movies enriched: {total_enriched}")
     
     # Check for failures
