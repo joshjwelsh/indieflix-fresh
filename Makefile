@@ -127,6 +127,11 @@ backend:
 	@echo "💡 API will be available at http://localhost:5000"
 	@cd backend/api && python app.py
 
+stop-backend:
+	@echo "🛑 Stopping backend server on port 5000..."
+	@fuser -k 5000/tcp 2>/dev/null || echo "No process found on port 5000"
+	@echo "✅ Backend stopped"
+
 frontend:
 	@echo "🌐 Starting frontend server..."
 	@echo "💡 Frontend will be available at http://localhost:8000"
