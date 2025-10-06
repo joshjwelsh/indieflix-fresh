@@ -105,17 +105,21 @@ def get_movies():
                 df = db_select_df(sql, (theater_filter, limit))
             else:
                 sql = """
-                    SELECT DISTINCT ON (title, theater_id) 
-                        title, theater, theater_id, location, website,
-                        director, year, dates, description, scraped_at,
-                        poster_url, runtime, tmdb_rating, genres, 
-                        cast_members, tmdb_overview, enriched_at
-                    FROM movies
-                    WHERE scraped_at >= (
-                        SELECT MAX(scraped_at) - INTERVAL '1 day'
+                    WITH recent_movies AS (
+                        SELECT DISTINCT ON (title, theater_id) 
+                            title, theater, theater_id, location, website,
+                            director, year, dates, description, scraped_at,
+                            poster_url, runtime, tmdb_rating, genres, 
+                            cast_members, tmdb_overview, enriched_at
                         FROM movies
+                        WHERE scraped_at >= (
+                            SELECT MAX(scraped_at) - INTERVAL '1 day'
+                            FROM movies
+                        )
+                        ORDER BY title, theater_id, scraped_at DESC
                     )
-                    ORDER BY title, theater_id, scraped_at DESC
+                    SELECT * FROM recent_movies
+                    ORDER BY dates ASC NULLS LAST
                     LIMIT %s
                 """
                 df = db_select_df(sql, (limit,))

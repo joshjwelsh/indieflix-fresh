@@ -77,7 +77,7 @@ install:
 
 env:
 	@echo "🌍 Environment variables:"
-	@echo "export DATABASE_URL='postgresql://indieflix:mypassword@indieflix-db:5432/indieflix'"
+	@echo "export DATAIBASE_URL='postgresql://indieflix:mypassword@indieflix-db:5432/indieflix'"
 	@echo "export DEBUG=True"
 	@echo "export SECRET_KEY='your-secret-key-here'"
 	@echo ""
@@ -136,6 +136,11 @@ frontend:
 	@echo "🌐 Starting frontend server..."
 	@echo "💡 Frontend will be available at http://localhost:8000"
 	@cd frontend && python -m http.server 8000
+
+stop-frontend:
+	@echo "🛑 Stopping frontend server on port 8000..."
+	@fuser -k 8000/tcp 2>/dev/null || echo "No process found on port 8000"
+	@echo "✅ Frontend stopped"
 
 test-frontend:
 	@echo "🧪 Quick Frontend Test Setup"

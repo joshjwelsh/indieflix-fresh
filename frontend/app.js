@@ -1,7 +1,10 @@
 // Indieflix Frontend JavaScript
 // API Configuration
-// Use relative path - works for both local and production since Flask serves both
-const API_BASE_URL = '/api';
+// For code-server: use proxy path to backend on port 5000
+// For production: relative path works since Flask serves both
+const API_BASE_URL = window.location.port === '8080' 
+    ? 'http://localhost:8080/proxy/5000/api'
+    : '/api';
 
 // State
 let allMovies = [];
@@ -16,7 +19,6 @@ const moviesContainer = document.getElementById('moviesContainer');
 const loadingState = document.getElementById('loadingState');
 const errorState = document.getElementById('errorState');
 const movieCount = document.getElementById('movieCount');
-const lastUpdated = document.getElementById('lastUpdated');
 const dateButtons = document.querySelectorAll('.date-btn');
 const customDatePicker = document.getElementById('customDate');
 const theaterCheckboxes = document.querySelectorAll('.theater-checkbox input[type="checkbox"]');
@@ -122,7 +124,6 @@ async function loadMovies() {
         if (data.success) {
             allMovies = data.movies;
             filterAndDisplayMovies();
-            updateStats();
         } else {
             throw new Error(data.error || 'Unknown error');
         }
@@ -165,32 +166,11 @@ function filterAndDisplayMovies() {
         );
     }
 
-    // Sort movies by date (earliest first)
-    filteredMovies.sort((a, b) => {
-        const dateA = extractDateFromDatesString(a.dates);
-        const dateB = extractDateFromDatesString(b.dates);
-        
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        
-        return dateA.localeCompare(dateB);
-    });
-
     // Update movie count
     movieCount.textContent = filteredMovies.length;
 
-    // Display movies
+    // Display movies (already sorted by backend SQL)
     displayMovies(filteredMovies);
-}
-
-// Extract YYYY-MM-DD date from dates string
-function extractDateFromDatesString(datesString) {
-    if (!datesString) return null;
-    
-    // Extract YYYY-MM-DD from format like "2024-10-12 (18:15, 20:45)"
-    const match = datesString.match(/^(\d{4}-\d{2}-\d{2})/);
-    return match ? match[1] : null;
 }
 
 // Check if movie is showing on a specific date
@@ -341,24 +321,6 @@ function formatRuntime(minutes) {
         return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     }
     return `${mins}m`;
-}
-
-// Update Stats
-async function updateStats() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/stats`);
-        const data = await response.json();
-
-        if (data.success && data.stats) {
-            if (data.stats.last_scrape) {
-                const date = new Date(data.stats.last_scrape);
-                lastUpdated.textContent = formatDate(date);
-            }
-        }
-    } catch (error) {
-        console.error('Error loading stats:', error);
-        lastUpdated.textContent = 'Unknown';
-    }
 }
 
 // Helper Functions
