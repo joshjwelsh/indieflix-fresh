@@ -12,6 +12,8 @@ let selectedTheaters = ['ifc_center', 'metrograph', 'syndicated_bk'];
 let currentDateFilter = 'all';
 let customDate = null;
 let searchQuery = '';
+let timeRangeStart = null;
+let timeRangeEnd = null;
 
 // DOM Elements
 const searchInput = document.getElementById('searchInput');
@@ -24,6 +26,9 @@ const customDatePicker = document.getElementById('customDate');
 const theaterCheckboxes = document.querySelectorAll('.theater-checkbox input[type="checkbox"]');
 const clearTheatersBtn = document.getElementById('clearTheaters');
 const selectAllTheatersBtn = document.getElementById('selectAllTheaters');
+const timeStartInput = document.getElementById('timeStart');
+const timeEndInput = document.getElementById('timeEnd');
+const clearTimeBtn = document.getElementById('clearTime');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -98,6 +103,32 @@ function setupEventListeners() {
         updateSelectedTheaters();
         filterAndDisplayMovies();
     });
+
+    // Time filter inputs
+    if (timeStartInput) {
+        timeStartInput.addEventListener('change', () => {
+            timeRangeStart = timeStartInput.value;
+            filterAndDisplayMovies();
+        });
+    }
+
+    if (timeEndInput) {
+        timeEndInput.addEventListener('change', () => {
+            timeRangeEnd = timeEndInput.value;
+            filterAndDisplayMovies();
+        });
+    }
+
+    // Clear time filter button
+    if (clearTimeBtn) {
+        clearTimeBtn.addEventListener('click', () => {
+            timeRangeStart = null;
+            timeRangeEnd = null;
+            if (timeStartInput) timeStartInput.value = '';
+            if (timeEndInput) timeEndInput.value = '';
+            filterAndDisplayMovies();
+        });
+    }
 }
 
 // Update selected theaters array
@@ -152,9 +183,15 @@ function filterAndDisplayMovies() {
     }
 
     // Filter by selected theaters (multi-select)
-    if (selectedTheaters.length > 0) {
+    // If no theaters selected, show nothing
+    filteredMovies = filteredMovies.filter(movie => 
+        selectedTheaters.includes(movie.theater_id)
+    );
+
+    // Filter by time range
+    if (timeRangeStart || timeRangeEnd) {
         filteredMovies = filteredMovies.filter(movie => 
-            selectedTheaters.includes(movie.theater_id)
+            hasShowtimeInRange(movie.dates, timeRangeStart, timeRangeEnd)
         );
     }
 
@@ -171,6 +208,62 @@ function filterAndDisplayMovies() {
 
     // Display movies (already sorted by backend SQL)
     displayMovies(filteredMovies);
+}
+
+// Check if movie has showtime in specified time range
+function hasShowtimeInRange(datesString, startTime, endTime) {
+    if (!datesString) return false;
+    if (!startTime && !endTime) return true;
+    
+    // Extract times from the dates string
+    // Format: "2024-10-12 (18:15, 20:45)" or "2024-10-12 (6:30 PM, 9:00 PM)"
+    const timesMatch = datesString.match(/\(([^)]+)\)/);
+    if (!timesMatch) return false;
+    
+    const times = timesMatch[1].split(',').map(t => t.trim());
+    
+    // Convert time strings to minutes for comparison
+    for (const timeStr of times) {
+        const minutes = parseTimeToMinutes(timeStr);
+        if (minutes === null) continue;
+        
+        const startMinutes = startTime ? parseTimeToMinutes(startTime) : 0;
+        const endMinutes = endTime ? parseTimeToMinutes(endTime) : 1440; // End of day
+        
+        if (minutes >= startMinutes && minutes <= endMinutes) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Parse time string to minutes since midnight
+function parseTimeToMinutes(timeStr) {
+    if (!timeStr) return null;
+    
+    // Handle 24-hour format (HH:MM)
+    let match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+    if (match) {
+        const hours = parseInt(match[1]);
+        const minutes = parseInt(match[2]);
+        return hours * 60 + minutes;
+    }
+    
+    // Handle 12-hour format with AM/PM (H:MM AM/PM or HH:MM AM/PM)
+    match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (match) {
+        let hours = parseInt(match[1]);
+        const minutes = parseInt(match[2]);
+        const period = match[3].toUpperCase();
+        
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        
+        return hours * 60 + minutes;
+    }
+    
+    return null;
 }
 
 // Check if movie is showing on a specific date

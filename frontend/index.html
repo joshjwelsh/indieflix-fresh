@@ -43,6 +43,22 @@
             <input type="date" id="customDate" class="date-picker" title="Select a specific date">
         </section>
 
+        <!-- Time Filter -->
+        <section class="time-filter">
+            <h3 class="filter-heading">Filter by Showtime:</h3>
+            <div class="time-inputs">
+                <div class="time-input-group">
+                    <label for="timeStart">From:</label>
+                    <input type="time" id="timeStart" class="time-picker">
+                </div>
+                <div class="time-input-group">
+                    <label for="timeEnd">To:</label>
+                    <input type="time" id="timeEnd" class="time-picker">
+                </div>
+                <button id="clearTime" class="clear-time-btn">Clear Times</button>
+            </div>
+        </section>
+
         <!-- Theater Filter - Multi-select -->
         <section class="theater-filter">
             <h3 class="filter-heading">Select Theaters:</h3>
