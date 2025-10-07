@@ -307,10 +307,23 @@ function isShowingOnDate(datesString, targetDate) {
 // Display Movies in Grid
 function displayMovies(movies) {
     if (movies.length === 0) {
+        // Determine the appropriate message based on why there are no results
+        let message = 'No movies available.';
+        
+        if (selectedTheaters.length === 0) {
+            message = '🎭 Please select at least one theater to see movies.';
+        } else if (searchQuery) {
+            message = 'No movies found matching your search.';
+        } else if (currentDateFilter !== 'all') {
+            message = 'No movies found for the selected date.';
+        } else if (timeRangeStart || timeRangeEnd) {
+            message = 'No movies found for the selected time range.';
+        }
+        
         moviesContainer.innerHTML = `
             <div class="text-center" style="grid-column: 1 / -1; padding: 3rem;">
                 <p style="font-size: 1.2rem; color: var(--text-light);">
-                    ${searchQuery ? 'No movies found matching your search.' : 'No movies available.'}
+                    ${message}
                 </p>
             </div>
         `;
