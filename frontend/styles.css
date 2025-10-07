@@ -40,7 +40,6 @@ header {
     background: var(--gradient-primary);
     color: white;
     padding: 3rem 0;
-    text-align: center;
     box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
@@ -58,6 +57,24 @@ header::before {
     opacity: 0.3;
 }
 
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    gap: 2rem;
+}
+
+.header-main {
+    text-align: left;
+    flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
 header h1 {
     font-size: 3rem;
     font-weight: 800;
@@ -71,6 +88,41 @@ header h1 {
     opacity: 0.95;
     position: relative;
     font-weight: 300;
+}
+
+/* Buy Me a Coffee Button */
+.coffee-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    color: white;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.coffee-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.coffee-emoji {
+    font-size: 1.3rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.coffee-text {
+    white-space: nowrap;
 }
 
 /* Main Content */
@@ -549,6 +601,20 @@ footer p {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+    
+    .header-main {
+        text-align: center;
+    }
+    
+    .header-actions {
+        justify-content: center;
+    }
+    
     header h1 {
         font-size: 2rem;
     }
@@ -574,6 +640,15 @@ footer p {
     .movies-grid {
         grid-template-columns: 1fr;
     }
+    
+    .time-inputs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .clear-time-btn {
+        margin-left: 0;
+    }
 }
 
 @media (max-width: 480px) {
@@ -581,8 +656,29 @@ footer p {
         padding: 0 15px;
     }
     
+    header {
+        padding: 2rem 0;
+    }
+    
     header h1 {
         font-size: 1.75rem;
+    }
+    
+    .tagline {
+        font-size: 0.9rem;
+    }
+    
+    .coffee-btn {
+        font-size: 0.85rem;
+        padding: 0.6rem 1.2rem;
+    }
+    
+    .coffee-text {
+        display: none;
+    }
+    
+    .coffee-emoji {
+        font-size: 1.5rem;
     }
     
     .movie-card {
